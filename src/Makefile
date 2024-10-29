@@ -1,11 +1,14 @@
 CC=gcc
 CFLAGS=-Wall -Werror -Wextra
 BUILD=../build
+LIBS=../libs
 
 all: clang main run clean
 
-main: main.o engine.o
-	$(CC) $(CFLAGS) -lncurses main.o engine.o -o $(BUILD)/exec
+rebuild: main clean
+
+main: main.o engine.o vector.o
+	$(CC) $(CFLAGS) -lncurses vector.o main.o engine.o -o $(BUILD)/exec
 
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
@@ -13,8 +16,14 @@ main.o: main.c
 engine.o: engine.h engine.c
 	$(CC) $(CFLAGS) -c engine.c
 
+vector.o: $(LIBS)/vector.c $(LIBS)/vector.h
+	$(CC) $(CFLAGS) -c $(LIBS)/vector.c
+
 clang:
 	clang-format -i *.c
+
+leaks: rebuild
+	leaks -atExit -- $(BUILD)/exec
 
 cppcheck:
 	cppcheck --enable=all --suppress=missingIncludeSystem *.c

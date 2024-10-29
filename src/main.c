@@ -2,6 +2,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "../libs/vector.h"
 #include "engine.h"
 #include "math.h"
 
@@ -39,40 +40,33 @@ int main() {
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, COLOR_CYAN, COLOR_BLACK);
 
-    struct timespec t1, t2;
-    clock_gettime(CLOCK_MONOTONIC, &t1);
-
     while (isRunning()) {
-        clock_gettime(CLOCK_MONOTONIC, &t2);
-        double fElapsedTime = (t2.tv_sec - t1.tv_sec) + (t2.tv_nsec - t1.tv_nsec) / 1e9;
-        t1 = t2;
-
         switch (getch()) {
             case 'q':
                 setIsRunning();
                 break;
-            case 68:
-                fPlayerA -= 200 * fElapsedTime;
+            case 'a':
+                fPlayerA -= 0.1;
                 break;
-            case 67:
-                fPlayerA += 200 * fElapsedTime;
+            case 'd':
+                fPlayerA += 0.1;
                 break;
             case 'w':
-                fPlayerX += sinf(fPlayerA) * 800 * fElapsedTime;
-                fPlayerY += cosf(fPlayerA) * 800 * fElapsedTime;
+                fPlayerX += sinf(fPlayerA) * 0.1;
+                fPlayerY += cosf(fPlayerA) * 0.1;
 
                 if (map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#') {
-                    fPlayerX -= sinf(fPlayerA) * 800 * fElapsedTime;
-                    fPlayerY -= cosf(fPlayerA) * 800 * fElapsedTime;
+                    fPlayerX -= sinf(fPlayerA) * 0.1;
+                    fPlayerY -= cosf(fPlayerA) * 0.1;
                 }
                 break;
             case 's':
-                fPlayerX -= sinf(fPlayerA) * 800 * fElapsedTime;
-                fPlayerY -= cosf(fPlayerA) * 800 * fElapsedTime;
+                fPlayerX -= sinf(fPlayerA) * 0.1;
+                fPlayerY -= cosf(fPlayerA) * 0.1;
 
                 if (map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#') {
-                    fPlayerX += sinf(fPlayerA) * 800 * fElapsedTime;
-                    fPlayerY += cosf(fPlayerA) * 800 * fElapsedTime;
+                    fPlayerX += sinf(fPlayerA) * 0.1;
+                    fPlayerY += cosf(fPlayerA) * 0.1;
                 }
                 break;
         }
@@ -81,7 +75,7 @@ int main() {
             float fRayAngle = (fPlayerA - fFOV / 2.0) + ((float)x / (float)nScreenWidth) * fFOV;
             float fDistanceToWall = 0;
             int bHitWall = 0;
-            // int bBoundary = 0;
+            int bBoundary = 0;
 
             float fEyeX = sinf(fRayAngle);
             float fEyeY = cosf(fRayAngle);
@@ -98,6 +92,24 @@ int main() {
                 } else {
                     if (map[nTestY * nMapWidth + nTestX] == '#') {
                         bHitWall = 1;
+
+                        Vector* p = initVector(1);
+
+                        for (int tx = 0; tx < 2; ++tx)
+                            for (int ty = 0; ty < 2; ++ty) {
+                                float vy = (float)nTestY + ty - fPlayerY;
+                                float vx = (float)nTestX + tx - fPlayerX;
+                                float d = sqrt(vx * vx + vy * vy);
+                                float dot = (fEyeX * vx / d) + (fEyeY * vy / d);
+                                Pair pair = {d, dot};
+                                push_back(p, &pair);
+                            }
+                        qsort(p->data, p->used, sizeof(Pair), compare);
+
+                        float fBound = 0.01;
+                        if (acos(p->data[0].second) < fBound) bBoundary = true;
+                        if (acos(p->data[1].second) < fBound) bBoundary = true;
+                        // if (acos(p->data[2].second) < fBound) bBoundary = true;
                     }
                 }
             }
@@ -128,6 +140,8 @@ int main() {
             else
                 nShade = '.';
 
+            if (bBoundary) nShade = ' ';
+
             for (int y = 0; y < nScreenHeight; ++y) {
                 if (y < nCeiling)
                     mvaddch(y, x, ' ');
@@ -152,6 +166,7 @@ int main() {
         refresh();
     }
     endwin();
+
     return 0;
 }
 
