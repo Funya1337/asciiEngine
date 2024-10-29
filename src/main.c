@@ -23,12 +23,8 @@ void fillMapFromFile(char map[nMapWidth][nMapHeight]);
 void printMap(char map[nMapWidth][nMapHeight]);
 
 int main() {
-    const char* map =
-        "#################..............##..............##..............##..............##..............##..."
-        "...........##......#.......##..............##..............##..............##..............##......."
-        ".......##..............##..............#################";
-    // char map[nMapWidth][nMapHeight];
-    // fillMapFromFile(map);
+    char map[nMapWidth][nMapHeight];
+    fillMapFromFile(map);
     initscr();
     start_color();
     noecho();
@@ -52,21 +48,21 @@ int main() {
                 fPlayerA += 0.1;
                 break;
             case 'w':
-                fPlayerX += sinf(fPlayerA) * 0.1;
-                fPlayerY += cosf(fPlayerA) * 0.1;
+                fPlayerX += sinf(fPlayerA) * 0.5;
+                fPlayerY += cosf(fPlayerA) * 0.5;
 
-                if (map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#') {
-                    fPlayerX -= sinf(fPlayerA) * 0.1;
-                    fPlayerY -= cosf(fPlayerA) * 0.1;
+                if (map[(int)fPlayerY][(int)fPlayerX] == '#') {
+                    fPlayerX -= sinf(fPlayerA) * 0.5;
+                    fPlayerY -= cosf(fPlayerA) * 0.5;
                 }
                 break;
             case 's':
-                fPlayerX -= sinf(fPlayerA) * 0.1;
-                fPlayerY -= cosf(fPlayerA) * 0.1;
+                fPlayerX -= sinf(fPlayerA) * 0.5;
+                fPlayerY -= cosf(fPlayerA) * 0.5;
 
-                if (map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#') {
-                    fPlayerX += sinf(fPlayerA) * 0.1;
-                    fPlayerY += cosf(fPlayerA) * 0.1;
+                if (map[(int)fPlayerY][(int)fPlayerX] == '#') {
+                    fPlayerX += sinf(fPlayerA) * 0.5;
+                    fPlayerY += cosf(fPlayerA) * 0.5;
                 }
                 break;
         }
@@ -90,7 +86,7 @@ int main() {
                     bHitWall = 1;
                     fDistanceToWall = fDepth;
                 } else {
-                    if (map[nTestY * nMapWidth + nTestX] == '#') {
+                    if (map[nTestY][nTestX] == '#') {
                         bHitWall = 1;
 
                         Vector* p = initVector(1);
@@ -119,18 +115,6 @@ int main() {
             int nShade = ' ';
             int nShadeFloor = ' ';
 
-            // NOT WORKING WITH BLOCK ASCII CHARACTERS (TO DO)
-            // if (fDistanceToWall <= fDepth / 4.0)
-            //     nShade = 0x2588;
-            // else if (fDistanceToWall < fDepth / 3.0)
-            //     nShade = 0x2593;
-            // else if (fDistanceToWall < fDepth / 2.0)
-            //     nShade = 0x2592;
-            // else if (fDistanceToWall < fDepth) {
-            //     nShade = 0x2591;
-            // } else
-            //     nShade = ' ';
-
             if (fDistanceToWall <= fDepth / 4.0)
                 nShade = '#';
             else if (fDistanceToWall < fDepth / 3.0)
@@ -143,9 +127,9 @@ int main() {
             if (bBoundary) nShade = ' ';
 
             for (int y = 0; y < nScreenHeight; ++y) {
-                if (y < nCeiling)
-                    mvaddch(y, x, ' ');
-                else if (y > nCeiling && y <= nFloor) {
+                if (y < nCeiling) {
+                    mvaddch(y, x, ' ' | COLOR_PAIR(3));
+                } else if (y > nCeiling && y <= nFloor) {
                     mvaddch(y, x, (char)nShade | COLOR_PAIR(1));
                 } else {
                     float b = 1.0 - (((float)y - nScreenHeight / 2.0) / ((float)nScreenHeight / 2.0));
