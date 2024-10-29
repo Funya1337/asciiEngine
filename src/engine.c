@@ -7,4 +7,4 @@ void drawPixel(int x, int y, char ch) {
 
 int isRunning() { return running; }
 
-void setIsRunning() { running = 0; }
+void stopRunning() { running = 0; }

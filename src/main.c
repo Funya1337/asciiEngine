@@ -1,29 +1,18 @@
+#include <locale.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <wchar.h>
 
 #include "../libs/vector.h"
-#include "engine.h"
-#include "math.h"
+#include "player.h"
 
-int nScreenWidth = 120;
-int nScreenHeight = 40;
-
-int nMapWidth = 16;
-int nMapHeight = 16;
-
-float fPlayerX = 8.0;
-float fPlayerY = 8.0;
-float fPlayerA = 0.0;
-
-float fFOV = M_PI / 4.0;
-float fDepth = 16.0;
-
-void fillMapFromFile(char map[nMapWidth][nMapHeight]);
-void printMap(char map[nMapWidth][nMapHeight]);
+void fillMapFromFile(char map[N_MAP_WIDTH][N_MAP_HEIGHT]);
+void printMap(char map[N_MAP_WIDTH][N_MAP_HEIGHT], Player* player);
 
 int main() {
-    char map[nMapWidth][nMapHeight];
+    setlocale(LC_CTYPE, "");
+    Player player = playerInit();
     fillMapFromFile(map);
     initscr();
     start_color();
@@ -35,40 +24,15 @@ int main() {
     init_color(COLOR_CYAN, 201, 195, 195);  // Custom Grey (R, G, B)
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, COLOR_CYAN, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
+    init_pair(4, COLOR_WHITE, COLOR_WHITE);
 
     while (isRunning()) {
-        switch (getch()) {
-            case 'q':
-                setIsRunning();
-                break;
-            case 'a':
-                fPlayerA -= 0.1;
-                break;
-            case 'd':
-                fPlayerA += 0.1;
-                break;
-            case 'w':
-                fPlayerX += sinf(fPlayerA) * 0.5;
-                fPlayerY += cosf(fPlayerA) * 0.5;
+        handlePlayerInput(&player);
 
-                if (map[(int)fPlayerY][(int)fPlayerX] == '#') {
-                    fPlayerX -= sinf(fPlayerA) * 0.5;
-                    fPlayerY -= cosf(fPlayerA) * 0.5;
-                }
-                break;
-            case 's':
-                fPlayerX -= sinf(fPlayerA) * 0.5;
-                fPlayerY -= cosf(fPlayerA) * 0.5;
-
-                if (map[(int)fPlayerY][(int)fPlayerX] == '#') {
-                    fPlayerX += sinf(fPlayerA) * 0.5;
-                    fPlayerY += cosf(fPlayerA) * 0.5;
-                }
-                break;
-        }
-
-        for (int x = 0; x < nScreenWidth; ++x) {
-            float fRayAngle = (fPlayerA - fFOV / 2.0) + ((float)x / (float)nScreenWidth) * fFOV;
+        for (int x = 0; x < N_SCREEN_WIDTH; ++x) {
+            float fRayAngle =
+                (player.fPlayerA - player.fFOV / 2.0) + ((float)x / (float)N_SCREEN_WIDTH) * player.fFOV;
             float fDistanceToWall = 0;
             int bHitWall = 0;
             int bBoundary = 0;
@@ -76,15 +40,15 @@ int main() {
             float fEyeX = sinf(fRayAngle);
             float fEyeY = cosf(fRayAngle);
 
-            while (!bHitWall && fDistanceToWall < fDepth) {
+            while (!bHitWall && fDistanceToWall < player.fDepth) {
                 fDistanceToWall += 0.1;
 
-                int nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
-                int nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
+                int nTestX = (int)(player.fPlayerX + fEyeX * fDistanceToWall);
+                int nTestY = (int)(player.fPlayerY + fEyeY * fDistanceToWall);
 
-                if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight) {
+                if (nTestX < 0 || nTestX >= N_MAP_WIDTH || nTestY < 0 || nTestY >= N_MAP_HEIGHT) {
                     bHitWall = 1;
-                    fDistanceToWall = fDepth;
+                    fDistanceToWall = player.fDepth;
                 } else {
                     if (map[nTestY][nTestX] == '#') {
                         bHitWall = 1;
@@ -93,8 +57,8 @@ int main() {
 
                         for (int tx = 0; tx < 2; ++tx)
                             for (int ty = 0; ty < 2; ++ty) {
-                                float vy = (float)nTestY + ty - fPlayerY;
-                                float vx = (float)nTestX + tx - fPlayerX;
+                                float vy = (float)nTestY + ty - player.fPlayerY;
+                                float vx = (float)nTestX + tx - player.fPlayerX;
                                 float d = sqrt(vx * vx + vy * vy);
                                 float dot = (fEyeX * vx / d) + (fEyeY * vy / d);
                                 Pair pair = {d, dot};
@@ -106,33 +70,34 @@ int main() {
                         if (acos(p->data[0].second) < fBound) bBoundary = true;
                         if (acos(p->data[1].second) < fBound) bBoundary = true;
                         // if (acos(p->data[2].second) < fBound) bBoundary = true;
+                        empty_vector(p);
                     }
                 }
             }
-            int nCeiling = (float)(nScreenHeight / 2.0) - nScreenHeight / ((float)fDistanceToWall);
-            int nFloor = nScreenHeight - nCeiling;
+            int nCeiling = (float)(N_SCREEN_HEIGHT / 2.0) - N_SCREEN_HEIGHT / ((float)fDistanceToWall);
+            int nFloor = N_SCREEN_HEIGHT - nCeiling;
 
             int nShade = ' ';
             int nShadeFloor = ' ';
 
-            if (fDistanceToWall <= fDepth / 4.0)
+            if (fDistanceToWall <= player.fDepth / 4.0) {
                 nShade = '#';
-            else if (fDistanceToWall < fDepth / 3.0)
+            } else if (fDistanceToWall < player.fDepth / 3.0)
                 nShade = '+';
-            else if (fDistanceToWall < fDepth / 2.0)
+            else if (fDistanceToWall < player.fDepth / 2.0)
                 nShade = '-';
             else
                 nShade = '.';
 
             if (bBoundary) nShade = ' ';
 
-            for (int y = 0; y < nScreenHeight; ++y) {
+            for (int y = 0; y < N_SCREEN_HEIGHT; ++y) {
                 if (y < nCeiling) {
-                    mvaddch(y, x, ' ' | COLOR_PAIR(3));
+                    mvaddch(y, x, ' ');
                 } else if (y > nCeiling && y <= nFloor) {
                     mvaddch(y, x, (char)nShade | COLOR_PAIR(1));
                 } else {
-                    float b = 1.0 - (((float)y - nScreenHeight / 2.0) / ((float)nScreenHeight / 2.0));
+                    float b = 1.0 - (((float)y - N_SCREEN_HEIGHT / 2.0) / ((float)N_SCREEN_HEIGHT / 2.0));
                     if (b < 0.25)
                         nShadeFloor = '#';
                     else if (b < 0.5)
@@ -147,14 +112,14 @@ int main() {
                 }
             }
         }
+        printMap(map, &player);
         refresh();
     }
     endwin();
-
     return 0;
 }
 
-void fillMapFromFile(char map[nMapWidth][nMapHeight]) {
+void fillMapFromFile(char map[N_MAP_WIDTH][N_MAP_HEIGHT]) {
     int bufferLength = 18;
     char buffer[bufferLength];
     FILE* ptr = fopen("../assets/map.txt", "r");
@@ -164,9 +129,9 @@ void fillMapFromFile(char map[nMapWidth][nMapHeight]) {
         return;
     }
 
-    for (int y = 0; y < nMapHeight; ++y) {
+    for (int y = 0; y < N_MAP_HEIGHT; ++y) {
         if (fgets(buffer, bufferLength, ptr) != NULL) {
-            for (int x = 0; x < nMapWidth; ++x) {
+            for (int x = 0; x < N_MAP_WIDTH; ++x) {
                 map[x][y] = buffer[x];
             }
         } else {
@@ -177,11 +142,13 @@ void fillMapFromFile(char map[nMapWidth][nMapHeight]) {
     fclose(ptr);
 }
 
-void printMap(char map[nMapWidth][nMapHeight]) {
-    for (int i = 0; i < nMapWidth; ++i) {
-        for (int j = 0; j < nMapHeight; ++j) {
-            printw("%c", map[i][j]);
+void printMap(char map[N_MAP_WIDTH][N_MAP_HEIGHT], Player* player) {
+    for (int i = 0; i < N_MAP_WIDTH; ++i) {
+        for (int j = 0; j < N_MAP_HEIGHT; ++j) {
+            if (i == (int)player->fPlayerX && j == (int)player->fPlayerY)
+                mvaddch(i, j, 'P');
+            else
+                mvaddch(i, j, map[j][i] | COLOR_PAIR(3));
         }
-        printw("\n");
     }
 }

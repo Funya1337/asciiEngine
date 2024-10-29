@@ -7,11 +7,14 @@ all: clang main run clean
 
 rebuild: main clean
 
-main: main.o engine.o vector.o
-	$(CC) $(CFLAGS) -lncurses vector.o main.o engine.o -o $(BUILD)/exec
+main: engine.o vector.o player.o main.o
+	$(CC) $(CFLAGS) -lncurses vector.o engine.o player.o main.o -o $(BUILD)/exec
 
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
+
+player.o: player.h player.c
+	$(CC) $(CFLAGS) -c player.c
 
 engine.o: engine.h engine.c
 	$(CC) $(CFLAGS) -c engine.c
