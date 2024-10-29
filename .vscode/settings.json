@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "engine.h": "c",
-        "charconv": "c",
-        "vector": "c",
-        "vector.h": "c"
-    }
-}
