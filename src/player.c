@@ -31,10 +31,10 @@ void playerMoveBackward(float offset, Player *player) {
     }
 }
 
-void handlePlayerInput(Player *player) {
+void handlePlayerInput(Player *player, void (*stopRunning)()) {
     switch (getch()) {
         case 'q':
-            stopRunning();
+            (*stopRunning)();
             break;
         case 'a':
             playerAngleRotationLeft(0.1, player);

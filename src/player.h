@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include <math.h>
-#include "engine.h"
+#include "map.h"
 
 typedef struct {
     float fPlayerX;
@@ -19,6 +19,6 @@ void playerAngleRotationLeft(float offset, Player *player);
 void playerAngleRotationRight(float offset, Player *player);
 void playerMoveForward(float offset, Player *player);
 void playerMoveBackward(float offset, Player *player);
-void handlePlayerInput(Player *player);
+void handlePlayerInput(Player *player, void (*stopRunning)());
 
 #endif

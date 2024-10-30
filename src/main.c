@@ -1,17 +1,12 @@
-#include <locale.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
-#include <wchar.h>
 
-#include "../libs/vector.h"
-#include "player.h"
+#include "engine.h"
 
 void fillMapFromFile(char map[N_MAP_WIDTH][N_MAP_HEIGHT]);
 void printMap(char map[N_MAP_WIDTH][N_MAP_HEIGHT], Player* player);
 
 int main() {
-    setlocale(LC_CTYPE, "");
     Player player = playerInit();
     fillMapFromFile(map);
     initscr();
@@ -28,8 +23,7 @@ int main() {
     init_pair(4, COLOR_WHITE, COLOR_WHITE);
 
     while (isRunning()) {
-        handlePlayerInput(&player);
-
+        handlePlayerInput(&player, &stopRunning);
         for (int x = 0; x < N_SCREEN_WIDTH; ++x) {
             float fRayAngle =
                 (player.fPlayerA - player.fFOV / 2.0) + ((float)x / (float)N_SCREEN_WIDTH) * player.fFOV;
@@ -85,7 +79,7 @@ int main() {
             } else if (fDistanceToWall < player.fDepth / 3.0)
                 nShade = '+';
             else if (fDistanceToWall < player.fDepth / 2.0)
-                nShade = '-';
+                nShade = '*';
             else
                 nShade = '.';
 

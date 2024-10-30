@@ -3,15 +3,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
-#define N_MAP_WIDTH 16
-#define N_MAP_HEIGHT 16
-#define N_SCREEN_WIDTH 120
-#define N_SCREEN_HEIGHT 40
+
+#include "player.h"
+#include "map.h"
+#include "vec3.h"
+#include "../libs/vector.h"
 
 static int running = 1;
-char map[N_MAP_WIDTH][N_MAP_HEIGHT];
 
-void drawPixel(int x, int y, char ch);
+typedef struct {
+    vec3 p[3];
+} Triangle;
+
+typedef struct {
+    Vector *tris;
+} mesh;
+
+mesh createMesh();
 int isRunning();
 void stopRunning();
 
