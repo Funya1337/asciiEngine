@@ -11,15 +11,14 @@
 
 static int running = 1;
 
-typedef struct {
-    vec3 p[3];
-} Triangle;
+// typedef struct {
+//     vec3 p[3];
+// } Triangle;
 
-typedef struct {
-    Vector *tris;
-} mesh;
+// typedef struct {
+//     Vector *tris;
+// } mesh;
 
-mesh createMesh();
 int isRunning();
 void stopRunning();
 

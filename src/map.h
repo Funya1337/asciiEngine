@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
-#include "../libs/vector.h"
-
 #define N_MAP_WIDTH 16
 #define N_MAP_HEIGHT 16
 #define N_SCREEN_WIDTH 120

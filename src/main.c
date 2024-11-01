@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-
 #include "engine.h"
 
 void fillMapFromFile(char map[N_MAP_WIDTH][N_MAP_HEIGHT]);
@@ -47,7 +44,8 @@ int main() {
                     if (map[nTestY][nTestX] == '#') {
                         bHitWall = 1;
 
-                        Vector* p = initVector(1);
+                        Vector(Pair) vect;
+                        vector_init(&vect);
 
                         for (int tx = 0; tx < 2; ++tx)
                             for (int ty = 0; ty < 2; ++ty) {
@@ -56,15 +54,14 @@ int main() {
                                 float d = sqrt(vx * vx + vy * vy);
                                 float dot = (fEyeX * vx / d) + (fEyeY * vy / d);
                                 Pair pair = {d, dot};
-                                push_back(p, &pair);
+                                vector_push_back(&vect, pair);
                             }
-                        qsort(p->data, p->used, sizeof(Pair), compare);
+                        qsort(vect.data, vect.capacity, sizeof(Pair), compare);
 
                         float fBound = 0.01;
-                        if (acos(p->data[0].second) < fBound) bBoundary = true;
-                        if (acos(p->data[1].second) < fBound) bBoundary = true;
-                        // if (acos(p->data[2].second) < fBound) bBoundary = true;
-                        empty_vector(p);
+                        if (acos(vect.data[0].second) < fBound) bBoundary = true;
+                        if (acos(vect.data[1].second) < fBound) bBoundary = true;
+                        vector_clear(&vect);
                     }
                 }
             }
@@ -146,3 +143,31 @@ void printMap(char map[N_MAP_WIDTH][N_MAP_HEIGHT], Player* player) {
         }
     }
 }
+
+// ENGINE IMPL
+
+// #include "../libs/vector.h"
+// #include "engine.h"
+
+// #include <stdio.h>
+// #include <stdlib.h>
+
+// #include "../libs/vector.h"
+
+// int main() {
+//     Pair test = {10, 20};
+//     Pair test1 = {11, 21};
+//     Pair test2 = {12, 22};
+//     Vector(Pair) vect;
+//     vector_init(&vect);
+//     vector_push_back(&vect, test2);
+//     vector_push_back(&vect, test1);
+//     vector_push_back(&vect, test);
+//     qsort(vect.data, vect.capacity, sizeof(Pair), compare);
+
+//     for (int i = 0; i < vect.length; ++i) {
+//         printf("%f %f\n", vect.data[i].first, vect.data[i].second);
+//     }
+//     vector_clear(&vect);
+//     return 0;
+// }
