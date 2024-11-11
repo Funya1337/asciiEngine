@@ -1,19 +1,5 @@
 #include "engine.h"
 
-void mat4_mult(vec3 *i, vec3 *o, mat4 *m) {
-    o->x = i->x * m->m[0][0] + i->y * m->m[1][0] + i->z * m->m[2][0] + m->m[3][0];
-    o->y = i->x * m->m[0][1] + i->y * m->m[1][1] + i->z * m->m[2][1] + m->m[3][1];
-    o->z = i->x * m->m[0][2] + i->y * m->m[1][2] + i->z * m->m[2][2] + m->m[3][2];
-    float w = i->x * m->m[0][3] + i->y * m->m[1][3] + i->z * m->m[2][3] + m->m[3][3];
-
-    if (w != 0.0f) o->x /= w;
-    o->y /= w;
-    o->z /= w;
-}
-
-void engine_normalize2d(vec2 *v) { v->x *= ASPECT * PIXEL_ASPECT; }
-void engine_normalize3d(vec3 *v) { v->x *= ASPECT * PIXEL_ASPECT; }
-
 void engine_rotate(vec3 *point, float x, float y, float z) {
     float rad = 0;
     rad = x;
@@ -37,6 +23,86 @@ void engine_draw_line(vec2 *v1, vec2 *v2, char ch) {
     float angle = atan2(dy, dx);
 
     for (float i = 0; i < length; ++i) mvaddch(v1->y + sin(angle) * i, v1->x + cos(angle) * i, ch);
+}
+
+void engine_align_coords_center(void *points) {
+    float max_x, max_y = -1e9;
+    float min_x, min_y = 1e9;
+
+    for (int i = 0; i < (*(Vector(vec3) *)points).length; ++i) {
+        float cur_x = (*(Vector(vec3) *)points).data[i].x;
+        float cur_y = (*(Vector(vec3) *)points).data[i].y;
+        if (max_x < cur_x) max_x = cur_x;
+        if (max_y < cur_y) max_y = cur_y;
+        if (min_x > cur_x) min_x = cur_x;
+        if (min_y > cur_y) min_y = cur_y;
+    }
+
+    float x_center = (max_x + min_x) / 1.5;
+    float y_center = (max_y + min_y) / 2.5;
+    float x_offset = ((float)N_SCREEN_WIDTH / 2) - x_center;
+    float y_offset = ((float)N_SCREEN_HEIGHT / 2) - y_center;
+
+    for (int i = 0; i < (*(Vector(vec3) *)points).length; ++i) {
+        vec3_add_each(&(*(Vector(vec3) *)points).data[i], x_offset, y_offset, 0);
+    }
+}
+
+void engine_scale_shape(void *points, int size, int scale) {
+    for (int i = 0; i < size; ++i) {
+        vec3_scale(&(*(Vector(vec3) *)points).data[i], scale);
+    }
+}
+
+void engine_input_points(void *points, void *connections) {
+    FILE *file = fopen("../assets/cube.txt", "r");
+    char line[256];
+    int checker = 0;
+    if (file != NULL) {
+        while (fgets(line, sizeof(line), file)) {
+            if (!checker && line[0] != '\n') {
+                int file_x = line[0] - '0';
+                int file_y = line[2] - '0';
+                int file_z = line[4] - '0';
+
+                vec3 vec = {file_x, file_y, file_z};
+                vector_push_back((Vector(vec3) *)points, vec);
+            } else if (checker && line[0] != '\n') {
+                int file_a = line[0] - '0';
+                int file_b = line[2] - '0';
+                connection conn = {file_a, file_b};
+                vector_push_back((Vector(connection) *)connections, conn);
+            }
+            if (line[0] == '\n') checker = !checker;
+        }
+        fclose(file);
+
+        // for (int i = 0; i < (*(Vector(vec3) *)points).length; ++i)
+        //     printf("%f %f %f\n", (*(Vector(vec3) *)points).data[i].x, (*(Vector(vec3) *)points).data[i].y,
+        //            (*(Vector(vec3) *)points).data[i].z);
+
+        // printf("-------------------\n");
+
+        // for (int i = 0; i < (*(Vector(connection) *)connections).length; ++i)
+        //     printf("%d %d\n", (*(Vector(connection) *)connections).data[i].a,
+        //            (*(Vector(connection) *)connections).data[i].b);
+    } else {
+        fprintf(stderr, "Unable to open file!\n");
+    }
+}
+
+void update_screen_size() {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    N_SCREEN_WIDTH = w.ws_col;
+    N_SCREEN_HEIGHT = w.ws_row;
+    ASPECT = (float)N_SCREEN_WIDTH / N_SCREEN_HEIGHT;
+}
+
+void handle_winch(int sig) {
+    (void)sig;
+    update_screen_size();
+    // printw("N_SCREEN_WIDTH: %d, N_SCREEN_HEIGHT: %d\n", N_SCREEN_WIDTH, N_SCREEN_HEIGHT);
 }
 
 void handleUserInput() {

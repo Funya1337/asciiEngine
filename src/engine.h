@@ -3,19 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "player.h"
 #include "map.h"
 #include "vec3.h"
 #include "../libs/vector.h"
+#include "global.h"
 
-static int running = 1;
-static const float ASPECT = (float)N_SCREEN_WIDTH / N_SCREEN_HEIGHT;
-static const float PIXEL_ASPECT = 11.0f / 24.0f;
-
-typedef struct {
-    vec3 p[3];
-} Triangle;
+struct winsize w;
 
 typedef struct {
     float x;
@@ -23,24 +21,18 @@ typedef struct {
 } vec2;
 
 typedef struct {
-    Vector(Triangle) tris;
-} mesh;
-
-typedef struct {
     int a;
     int b;
 } connection;
 
-typedef struct {
-    float m[4][4];
-} mat4;
-
-void mat4_mult(vec3 *i, vec3 *o, mat4 *m);
 void handleUserInput();
+void update_screen_size();
+void handle_winch(int sig);
+void engine_align_coords_center(void *points);
+void engine_input_points(void *points, void *connections);
+void engine_scale_shape(void *points, int size, int scale);
 void engine_draw_line(vec2 *v1, vec2 *v2, char ch);
 void engine_rotate(vec3 *point, float x, float y, float z);
-void engine_normalize2d(vec2 *v);
-void engine_normalize3d(vec3 *v);
 int isRunning();
 void stopRunning();
 
